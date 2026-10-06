@@ -1,0 +1,43 @@
+"""
+Server file for emotion detection
+"""
+from flask import Flask, render_template, request
+from EmotionDetection.emotion_detection import emotion_detector
+
+app = Flask("Emotion Detector")
+
+@app.route("/emotionDetector")
+def em_detector():
+    """
+        Detects emotion using BERT NLP and returns emotion score
+    """
+    # Retrieve the text to analyze from the request arguments
+    text_to_analyze = request.args.get('textToAnalyze')
+    # 1. Pass the text to the emotion_detector function and store the response
+    response = emotion_detector(text_to_analyze)
+
+    # 2. Separate the list of emotions from the dominant emotion
+    dominant = response.pop('dominant_emotion')
+
+    # 3. Format each emotion item with single quotes around the key
+    emotion_list = [f"'{key}': {value}" for key, value in response.items()]
+
+    # 4. Join them with commas, using "and" for the final element
+    emotions_string = ", ".join(emotion_list[:-1]) + f" and {emotion_list[-1]}"
+
+    # Check if the dominant is None, indicating an error or invalid input
+    if dominant is None:
+        return "Invalid input! Try again."
+    # 5. Build the final sentence
+    return f"""For the given statement, the system response is
+    {emotions_string}. The dominant emotion is {dominant}."""
+
+@app.route("/")
+def render_index_page():
+    """
+    rendering application
+    """
+    return render_template('index.html')
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
